@@ -1,6 +1,6 @@
-import UIKit
+import AppKit
 
-public class TokenTextView: UITextView {
+public class TokenTextView: NSTextView {
 
     // MARK: Public properties
 
@@ -15,12 +15,12 @@ public class TokenTextView: UITextView {
 
     public var templatedText: String {
         // Ensure all tokens ranges have been updated
-        guard tokenInstances.first(where: {$0.range.upperBound - 1 >= text.count}) == nil else {
+        guard tokenInstances.first(where: {$0.range.upperBound - 1 >= string.count}) == nil else {
             print("TokenTextView: Failed to create templated text.")
             return ""
         }
 
-        return createTemplateText(fromTokenInstances: tokenInstances.compactMap { $0.copy() as? TokenInstance }, plainText: self.text)
+        return createTemplateText(fromTokenInstances: tokenInstances.compactMap { $0.copy() as? TokenInstance }, plainText: self.string)
     }
 
     // MARK: Private properties
@@ -49,7 +49,9 @@ public class TokenTextView: UITextView {
             self.tokenList = tokenList
         }
         super.init(frame: .zero, textContainer: nil)
-        self.text = text
+        if let text = text {
+            self.string = text
+        }
         setup()
     }
 
@@ -63,8 +65,8 @@ public class TokenTextView: UITextView {
     }
 
     private func setup() {
-        // In order to allow the use of standard UITextViewDelegate methods, we are using notifications to add class specific behavior that's required when text changes
-        NotificationCenter.default.addObserver(self, selector: #selector(textChanged), name: UITextView.textDidChangeNotification, object: nil)
+        // In order to allow the use of standard NSTextViewDelegate methods, we are using notifications to add class specific behavior that's required when text changes
+        NotificationCenter.default.addObserver(self, selector: #selector(textChanged), name: NSTextView.textDidChangeNotification, object: nil)
     }
 
     // MARK: Public methods
@@ -86,11 +88,11 @@ public class TokenTextView: UITextView {
         styleText()
 
         // Update cursor location if needed
-        if self.text.count != tokenRange.upperBound {
+        if self.string.count != tokenRange.upperBound {
             self.selectedRange = NSRange(location: location + token.name.count, length: 0)
         }
 
-        previousTextCount = self.text.count
+        previousTextCount = self.string.count
         delegate?.textViewDidChange?(self)
     }
 
@@ -98,11 +100,11 @@ public class TokenTextView: UITextView {
 
     // Create stylized text from a template
     private func tokenizeText() {
-        guard !text.isEmpty else { return }
+        guard !string.isEmpty else { return }
         tokenInstances.removeAll()
-        let templateInstances = getTemplateInstances(fromTemplate: text)
-        text = templateInstances.count > 0 ? createPlainText(fromTokenInstances: templateInstances, templateText: text) : text
-        previousTextCount = text.count
+        let templateInstances = getTemplateInstances(fromTemplate: string)
+        string = templateInstances.count > 0 ? createPlainText(fromTokenInstances: templateInstances, templateText: string) : string
+        previousTextCount = string.count
         styleText()
     }
 
@@ -179,8 +181,8 @@ public class TokenTextView: UITextView {
         // styleText() resets the selectedRange.location so we want to grab a reference to it here
         let location = selectedRange.location
 
-        if text.count != previousTextCount {
-            let difference = text.count - previousTextCount
+        if string.count != previousTextCount {
+            let difference = string.count - previousTextCount
             let changedRange = NSRange(location: difference < 0 ? location : location - difference, length: abs(difference))
             cleanTokenInstances(inRange: changedRange, difference: difference)
             updateRanges(after: difference < 0 ? location : location - difference, difference: difference)
@@ -188,7 +190,7 @@ public class TokenTextView: UITextView {
         }
 
         selectedRange = NSRange(location: location, length: 0)
-        previousTextCount = text.count
+        previousTextCount = string.count
     }
 
     private func cleanTokenInstances(inRange changedRange: NSRange, difference: Int) {
@@ -215,15 +217,15 @@ public class TokenTextView: UITextView {
 
     private func styleText() {
         // Add common attributes
-        let attributedString = NSMutableAttributedString(string: self.text)
-        attributedString.addAttributes(textAttributes.dictionary, range: NSRange(location: 0, length: self.text.utf16.count))
+        let attributedString = NSMutableAttributedString(string: self.string)
+        attributedString.addAttributes(textAttributes.dictionary, range: NSRange(location: 0, length: self.string.utf16.count))
 
         // Add token attributes
         for instance in tokenInstances {
             attributedString.addAttributes(tokenAttributes.dictionary, range: instance.range)
         }
 
-        self.attributedText = attributedString
+        self.textStorage?.setAttributedString(attributedString)
     }
 
     // MARK: Utility methods
@@ -233,9 +235,9 @@ public class TokenTextView: UITextView {
     }
 
     private func insertText(_ text: String, at location: Int) {
-        let newMutableString = NSMutableString(string: self.text)
+        let newMutableString = NSMutableString(string: self.string)
         newMutableString.insert(text, at: location)
-        self.text = newMutableString as String
+        self.string = newMutableString as String
     }
 
     private func stringIndices(ofTokenInstance tokenInstance: TokenInstance, messageText: String) -> (String.Index, String.Index) {
@@ -256,14 +258,14 @@ public class TokenTextView: UITextView {
 
     public override func paste(_ sender: Any?) {
         // Check that the currently copied tokens are relevant to this paste operation
-        guard pasteboardTokenInstances.filter({ UIPasteboard.general.string?.contains($0.0.token.name) ?? false }).count == pasteboardTokenInstances.count else {
+        guard pasteboardTokenInstances.filter({ NSPasteboard.general.string(forType: .string)?.contains($0.0.token.name) ?? false }).count == pasteboardTokenInstances.count else {
             pasteboardTokenInstances.removeAll()
             super.paste(sender)
             return
         }
 
         let pasteRange = selectedRange
-        let pasteText = UIPasteboard.general.string
+        let pasteText = NSPasteboard.general.string(forType: .string)
 
         updateRanges(after: selectedRange.lowerBound, difference: pasteText?.count ?? 0)
         for tuple in pasteboardTokenInstances {
@@ -274,12 +276,12 @@ public class TokenTextView: UITextView {
         insertText(pasteText ?? "", at: pasteRange.location)
         styleText()
 
-        if self.text.count != pasteRange.upperBound {
+        if self.string.count != pasteRange.upperBound {
             self.selectedRange = NSRange(location: pasteRange.location + (pasteText?.count ?? 0), length: 0)
         }
 
-        previousTextCount = self.text.count
-        delegate?.textViewDidChange?(self)
+        previousTextCount = self.string.count
+        delegate?.textDidChange?(<#T##notification: Notification##Notification#>)
     }
 
     private func copyTokens() {

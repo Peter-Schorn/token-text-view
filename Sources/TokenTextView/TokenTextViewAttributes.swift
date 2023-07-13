@@ -1,9 +1,9 @@
-import UIKit
+import AppKit
 
 public struct TokenTextViewAttributes {
-    public var backgroundColor: UIColor
-    public var foregroundColor: UIColor
-    public var font: UIFont
+    public var backgroundColor: NSColor
+    public var foregroundColor: NSColor
+    public var font: NSFont
     public var kern: Int?
     public var paragraphStyle: NSMutableParagraphStyle?
 
@@ -20,7 +20,7 @@ public struct TokenTextViewAttributes {
         return dictionary
     }
 
-    public init(backgroundColor: UIColor, foregroundColor: UIColor, font: UIFont, kern: Int? = nil, paragraphStyle: NSMutableParagraphStyle? = nil) {
+    public init(backgroundColor: NSColor, foregroundColor: NSColor, font: NSFont, kern: Int? = nil, paragraphStyle: NSMutableParagraphStyle? = nil) {
         self.backgroundColor = backgroundColor
         self.foregroundColor = foregroundColor
         self.font = font
