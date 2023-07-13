@@ -56,7 +56,7 @@ final class TokenTextViewTests: XCTestCase {
     // MARK: Tokenized text
 
     func testTokenizeText() {
-        XCTAssertEqual(tokenTextView.text, mockPlainText)
+        XCTAssertEqual(tokenTextView.string, mockPlainText)
     }
 
     func testTokenizeTextTokenInstanceRangesAreCorrect() {
@@ -93,7 +93,7 @@ final class TokenTextViewTests: XCTestCase {
         tokenTextView.selectedRange = NSRange(location: tokenRange.upperBound, length: 0)
         let numberOfTokenInstances = tokenTextViewMirror.tokenInstances?.count ?? 0
 
-        tokenTextView.deleteBackward()
+        tokenTextView.deleteBackward(nil)
 
         XCTAssertEqual(tokenTextViewMirror.tokenInstances?.count, numberOfTokenInstances - 1)
     }
@@ -114,7 +114,10 @@ final class TokenTextViewTests: XCTestCase {
         let newText = "T"
 
         tokenTextView.selectedRange = NSRange(location: 0, length: 0)
-        tokenTextView.insertText(newText)
+        tokenTextView.insertText(
+            newText,
+            replacementRange: tokenTextView.string.fullRange
+        )
 
         let invalidTokenInstances = tokenTextViewMirror.tokenInstances?.filter { instance in
             guard let staleTokenInstanceLocation = staleTokenInstances.first(where: { $0.token.identifier == instance.token.identifier })?.range.location else {
@@ -134,8 +137,11 @@ final class TokenTextViewTests: XCTestCase {
         }
         let newText = "T"
 
-        tokenTextView.selectedRange = NSRange(location: tokenTextView.text.count, length: 0)
-        tokenTextView.insertText(newText)
+        tokenTextView.selectedRange = NSRange(location: tokenTextView.string.count, length: 0)
+        tokenTextView.insertText(
+            newText,
+            replacementRange: tokenTextView.string.fullRange
+        )
 
         let invalidTokenInstances = tokenTextViewMirror.tokenInstances?.filter { instance in
             guard let staleTokenInstanceLocation = staleTokenInstances.first(where: { $0.token.identifier == instance.token.identifier })?.range.location else {
@@ -200,7 +206,7 @@ final class TokenTextViewTests: XCTestCase {
         tokenTextView.selectedRange = copyRange
         tokenTextView.copy(tokenTextView)
 
-        let pasteRange = NSRange(location: tokenTextView.text.count, length: 0)
+        let pasteRange = NSRange(location: tokenTextView.string.count, length: 0)
         tokenTextView.selectedRange = pasteRange
         tokenTextView.paste(tokenTextView)
 

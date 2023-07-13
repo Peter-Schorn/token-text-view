@@ -66,7 +66,12 @@ public class TokenTextView: NSTextView {
 
     private func setup() {
         // In order to allow the use of standard NSTextViewDelegate methods, we are using notifications to add class specific behavior that's required when text changes
-        NotificationCenter.default.addObserver(self, selector: #selector(textChanged), name: NSTextView.textDidChangeNotification, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(textChanged),
+            name: NSTextView.didChangeNotification,
+            object: nil
+        )
     }
 
     // MARK: Public methods
@@ -93,7 +98,8 @@ public class TokenTextView: NSTextView {
         }
 
         previousTextCount = self.string.count
-        delegate?.textViewDidChange?(self)
+        let notification = Notification(name: .tokenTextDidChange)
+        self.delegate?.textDidChange?(notification)
     }
 
     // MARK: Private methods
@@ -281,7 +287,8 @@ public class TokenTextView: NSTextView {
         }
 
         previousTextCount = self.string.count
-        delegate?.textDidChange?(<#T##notification: Notification##Notification#>)
+        let notification = Notification(name: .tokenTextDidChange)
+        delegate?.textDidChange?(notification)
     }
 
     private func copyTokens() {
